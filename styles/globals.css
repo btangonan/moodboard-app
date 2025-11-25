@@ -1,0 +1,296 @@
+body {
+  background-color: #000000;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Roboto', sans-serif;
+}
+
+.outer-drop-wrapper {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: #000000;
+  gap: 20px;
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: rgba(239, 68, 68, 0.9);
+  color: white;
+  border-radius: 6px;
+  font-size: 14px;
+  max-width: 80%;
+  animation: slideIn 0.3s ease;
+}
+
+.error-banner span {
+  flex: 1;
+}
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.error-dismiss:hover {
+  opacity: 1;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.drop-zone {
+  border: 2px dashed #444;
+  border-radius: 4px;
+  padding: 4px;
+  text-align: center;
+  background-color: #111;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+}
+
+.drop-zone.dragging-over {
+  border-color: #2196f3;
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.drop-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #888;
+  font-size: 1rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.drag-handle {
+  cursor: move;
+}
+
+.delete-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background-color: rgba(255, 0, 0, 0.8);
+  color: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 11;
+  opacity: 0;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: auto !important;
+}
+
+.grid-item:hover .delete-button {
+  opacity: 0.8;
+}
+
+.delete-button:hover {
+  opacity: 1 !important;
+  transform: scale(1.1);
+  background-color: red;
+}
+
+.grid-item {
+  background-color: #222;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: move;
+}
+
+.grid-item:hover {
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+  transform: translateY(-2px);
+}
+
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.react-resizable-handle {
+  cursor: se-resize;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.react-resizable-handle:hover {
+  opacity: 1;
+}
+
+/* Add tighter grid spacing */
+.layout {
+  margin: 0 !important;
+}
+
+.react-grid-item {
+  margin: 0 !important;
+  padding: 2px !important;
+}
+
+.export-button {
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: white;
+  background-color: #2196f3;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.export-button:hover {
+  background-color: #1976d2;
+  transform: translateY(-1px);
+}
+
+.export-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+}
+
+.image-container img {
+  pointer-events: none;
+  user-select: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.1s ease-out;
+}
+
+.reposition-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  z-index: 10;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.image-container:hover .reposition-handle {
+  opacity: 1;
+}
+
+/* Show handle when image needs repositioning */
+.image-container.needs-repositioning .reposition-handle {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.image-position-handle {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.2s ease;
+  padding: 4px;
+}
+
+.grid-item:hover .image-position-handle {
+  opacity: 0.9;
+}
+
+.image-position-handle:hover {
+  opacity: 1 !important;
+  background-color: rgba(255, 255, 255, 0.25);
+  transform: scale(1.1);
+}
+
+.image-position-handle svg {
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.image-drag-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+  color: white;
+  padding: 20px 10px 10px;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.image-container:hover .image-drag-indicator {
+  opacity: 1;
+} 
