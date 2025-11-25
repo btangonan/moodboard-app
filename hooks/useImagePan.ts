@@ -85,8 +85,12 @@ export function useImagePan({ images, setImages }: UseImagePanOptions): UseImage
       setImages(prev => prev.map(img => {
         if (img.i !== imageId) return img
 
-        const newX = Math.max(-maxOffset.x, Math.min(maxOffset.x, currentOffset.x + deltaX))
-        const newY = Math.max(-maxOffset.y, Math.min(maxOffset.y, currentOffset.y + deltaY))
+        // Clamp to half the max offset so object-position stays within 0%-100%
+        // This prevents empty space from appearing at image edges
+        const halfMaxX = maxOffset.x / 2
+        const halfMaxY = maxOffset.y / 2
+        const newX = Math.max(-halfMaxX, Math.min(halfMaxX, currentOffset.x + deltaX))
+        const newY = Math.max(-halfMaxY, Math.min(halfMaxY, currentOffset.y + deltaY))
 
         return { ...img, offset: { x: newX, y: newY } }
       }))

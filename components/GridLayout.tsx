@@ -28,6 +28,7 @@ const GridLayoutComponent = () => {
   const { isExporting, handleExport } = useExport({
     gridRef: gridRef as React.RefObject<HTMLDivElement>,
     imageCount: images.length,
+    images,
     onError: (msg) => {
       setError(msg)
       setTimeout(() => setError(null), 5000)

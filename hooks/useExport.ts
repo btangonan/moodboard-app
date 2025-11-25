@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useCallback, RefObject } from 'react'
-import domtoimage from 'dom-to-image-more'
+import type { MoodboardImage } from './types'
 
 interface UseExportOptions {
   gridRef: RefObject<HTMLDivElement>
   imageCount: number
+  images: MoodboardImage[]
   onError: (message: string) => void
 }
 
@@ -14,7 +15,43 @@ interface UseExportReturn {
   handleExport: () => Promise<void>
 }
 
-export function useExport({ gridRef, imageCount, onError }: UseExportOptions): UseExportReturn {
+// Calculate source rectangle for object-fit: cover behavior
+// objectPositionX/Y are percentages (0-100), where 50 is center
+function calculateCoverCrop(
+  imgWidth: number,
+  imgHeight: number,
+  containerWidth: number,
+  containerHeight: number,
+  objectPositionXPercent: number = 50,
+  objectPositionYPercent: number = 50
+): { sx: number; sy: number; sw: number; sh: number } {
+  const imgRatio = imgWidth / imgHeight
+  const containerRatio = containerWidth / containerHeight
+
+  let sw: number, sh: number, sx: number, sy: number
+
+  if (imgRatio > containerRatio) {
+    // Image is wider - crop horizontally
+    sh = imgHeight
+    sw = imgHeight * containerRatio
+    const maxOffsetX = imgWidth - sw
+    // Convert object-position percentage to source x coordinate
+    sx = (objectPositionXPercent / 100) * maxOffsetX
+    sy = 0
+  } else {
+    // Image is taller - crop vertically
+    sw = imgWidth
+    sh = imgWidth / containerRatio
+    sx = 0
+    const maxOffsetY = imgHeight - sh
+    // Convert object-position percentage to source y coordinate
+    sy = (objectPositionYPercent / 100) * maxOffsetY
+  }
+
+  return { sx, sy, sw, sh }
+}
+
+export function useExport({ gridRef, imageCount, images, onError }: UseExportOptions): UseExportReturn {
   const [isExporting, setIsExporting] = useState(false)
 
   const handleExport = useCallback(async () => {
@@ -23,85 +60,108 @@ export function useExport({ gridRef, imageCount, onError }: UseExportOptions): U
     setIsExporting(true)
 
     try {
-      const dropZone = gridRef.current
-      const gridContainer = dropZone.querySelector('.layout') as HTMLElement
-
-      if (!gridContainer) {
-        console.error('Grid container not found')
-        return
-      }
-
-      // Calculate dimensions
+      const gridContainer = gridRef.current
       const gridRect = gridContainer.getBoundingClientRect()
-      const dropZoneRect = dropZone.getBoundingClientRect()
-      const extraPadding = 40
 
-      const totalWidth = Math.max(gridRect.width, dropZoneRect.width) + (extraPadding * 2)
-      const totalHeight = Math.max(gridRect.height, dropZoneRect.height) + (extraPadding * 2)
+      // Create canvas at 2x resolution for crisp export
+      const scale = 2
+      const canvas = document.createElement('canvas')
+      canvas.width = gridRect.width * scale
+      canvas.height = gridRect.height * scale
 
-      // Save original styles
-      const originalStyles = {
-        width: dropZone.style.width,
-        height: dropZone.style.height,
-        padding: dropZone.style.padding,
-        margin: dropZone.style.margin,
-        position: dropZone.style.position,
-        background: dropZone.style.background,
-        border: dropZone.style.border
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        throw new Error('Could not get canvas context')
       }
 
-      // Apply temporary styles for export
-      Object.assign(dropZone.style, {
-        width: `${totalWidth}px`,
-        height: `${totalHeight}px`,
-        padding: `${extraPadding}px`,
-        margin: '0',
-        position: 'relative',
-        background: 'transparent',
-        border: 'none'
-      })
+      // Scale context for 2x resolution
+      ctx.scale(scale, scale)
 
-      // Save and modify grid item backgrounds
-      const gridItems = dropZone.querySelectorAll('.grid-item') as NodeListOf<HTMLElement>
-      const originalGridItemStyles = Array.from(gridItems).map(item => ({
-        element: item,
-        background: item.style.background
-      }))
+      // Find all grid items and their positions
+      const gridItems = gridContainer.querySelectorAll('.grid-item')
 
-      gridItems.forEach(item => {
-        item.style.background = 'transparent'
-      })
+      // Process each grid item
+      for (const gridItem of Array.from(gridItems)) {
+        const imageId = gridItem.getAttribute('data-grid-id')
+        const imgElement = gridItem.querySelector('img') as HTMLImageElement | null
 
-      // Generate image
-      const dataUrl = await domtoimage.toPng(dropZone, {
-        quality: 1.0,
-        bgcolor: 'transparent',
-        width: totalWidth,
-        height: totalHeight,
-        style: {
-          width: `${totalWidth}px`,
-          height: `${totalHeight}px`
+        if (!imgElement || !imageId) continue
+
+        // Get the image data from state for offset info
+        const imageData = images.find(img => img.i === imageId)
+
+        // Get position relative to grid container
+        const itemRect = imgElement.getBoundingClientRect()
+        const dx = itemRect.left - gridRect.left
+        const dy = itemRect.top - gridRect.top
+        const dw = itemRect.width
+        const dh = itemRect.height
+
+        try {
+          // Use the EXISTING img element directly - it's already loaded!
+          // No need to create a new Image() and reload from blob URL
+
+          // Convert pixel offset to object-position percentage
+          // This matches the logic in useImagePan's calculateObjectPosition
+          const imgRatio = imgElement.naturalWidth / imgElement.naturalHeight
+          const containerRatio = dw / dh
+
+          let objectPositionXPercent = 50
+          let objectPositionYPercent = 50
+
+          if (imageData?.offset) {
+            if (imgRatio > containerRatio) {
+              // Image is wider - calculate horizontal pan
+              const displayScaledWidth = dh * imgRatio
+              const displayMaxOffset = displayScaledWidth - dw
+              if (displayMaxOffset > 0) {
+                // offset.x is in pixels, convert to percentage (50 = center)
+                objectPositionXPercent = 50 + (imageData.offset.x / displayMaxOffset) * 100
+              }
+            } else {
+              // Image is taller - calculate vertical pan
+              const displayScaledHeight = dw / imgRatio
+              const displayMaxOffset = displayScaledHeight - dh
+              if (displayMaxOffset > 0) {
+                // offset.y is in pixels, convert to percentage (50 = center)
+                objectPositionYPercent = 50 + (imageData.offset.y / displayMaxOffset) * 100
+              }
+            }
+          }
+
+          // Calculate crop for object-fit: cover using object-position percentages
+          const { sx, sy, sw, sh } = calculateCoverCrop(
+            imgElement.naturalWidth,
+            imgElement.naturalHeight,
+            dw,
+            dh,
+            objectPositionXPercent,
+            objectPositionYPercent
+          )
+
+          // Draw the image directly from the existing DOM element
+          ctx.drawImage(imgElement, sx, sy, sw, sh, dx, dy, dw, dh)
+        } catch (e) {
+          console.warn(`Failed to draw image ${imageId}:`, e)
+          // Draw placeholder for failed images
+          ctx.fillStyle = '#333'
+          ctx.fillRect(dx, dy, dw, dh)
         }
-      })
+      }
 
-      // Restore styles
-      Object.assign(dropZone.style, originalStyles)
-      originalGridItemStyles.forEach(({ element, background }) => {
-        element.style.background = background
-      })
-
-      // Download
+      // Download the canvas as PNG
       const link = document.createElement('a')
       link.download = 'moodboard.png'
-      link.href = dataUrl
+      link.href = canvas.toDataURL('image/png')
       link.click()
+
     } catch (error) {
       console.error('Export failed:', error)
       onError('Export failed. Please try again.')
     } finally {
       setIsExporting(false)
     }
-  }, [gridRef, imageCount, onError])
+  }, [gridRef, imageCount, images, onError])
 
   return { isExporting, handleExport }
 }
