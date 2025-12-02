@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import type { MoodboardImage } from './types'
 
-const MAX_FILE_SIZE_MB = 10
+const MAX_FILE_SIZE_MB = 30
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 const COLUMN_NUMBER = 10
 const BASE_ROW_HEIGHT = 50
@@ -24,17 +24,20 @@ interface UseImageUploadReturn {
   handleDelete: (imageId: string) => void
 }
 
+// Convert file to base64 data URL (works across tabs)
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 export function useImageUpload({ containerWidthPx }: UseImageUploadOptions): UseImageUploadReturn {
   const [images, setImages] = useState<MoodboardImage[]>([])
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Cleanup all blob URLs on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      images.forEach(img => URL.revokeObjectURL(img.src))
-    }
-  }, [images])
 
   const calculateGridDimensions = useCallback((naturalWidth: number, naturalHeight: number) => {
     const columnWidth = containerWidthPx / COLUMN_NUMBER
@@ -59,13 +62,7 @@ export function useImageUpload({ containerWidthPx }: UseImageUploadOptions): Use
   }, [])
 
   const handleDelete = useCallback((imageId: string) => {
-    setImages(prevImages => {
-      const imageToDelete = prevImages.find(img => img.i === imageId)
-      if (imageToDelete) {
-        URL.revokeObjectURL(imageToDelete.src)
-      }
-      return prevImages.filter(img => img.i !== imageId)
-    })
+    setImages(prevImages => prevImages.filter(img => img.i !== imageId))
   }, [])
 
   const handleDrop = useCallback(
@@ -92,25 +89,28 @@ export function useImageUpload({ containerWidthPx }: UseImageUploadOptions): Use
 
       if (!validFiles.length) return
 
-      // Process all files and collect their data
-      const imagePromises = validFiles.map((file, index) => {
-        return new Promise<MoodboardImage>((resolve) => {
-          const src = URL.createObjectURL(file)
+      // Process all files and collect their data (using base64 for cross-tab support)
+      const imagePromises = validFiles.map(async (file, index) => {
+        try {
+          const src = await fileToBase64(file)
           const id = `img-${Date.now()}-${index}-${Math.random()}`
 
-          const img = new Image()
-          img.src = src
+          return new Promise<MoodboardImage>((resolve) => {
+            const img = new Image()
+            img.src = src
 
-          img.onload = () => {
-            const { w, h } = calculateGridDimensions(img.naturalWidth, img.naturalHeight)
-            resolve({ src, i: id, x: 0, y: 0, w, h })
-          }
+            img.onload = () => {
+              const { w, h } = calculateGridDimensions(img.naturalWidth, img.naturalHeight)
+              resolve({ src, i: id, x: 0, y: 0, w, h })
+            }
 
-          img.onerror = () => {
-            URL.revokeObjectURL(src)
-            resolve(null as unknown as MoodboardImage)
-          }
-        })
+            img.onerror = () => {
+              resolve(null as unknown as MoodboardImage)
+            }
+          })
+        } catch {
+          return null as unknown as MoodboardImage
+        }
       })
 
       // Wait for all images to load, then add them with correct positions

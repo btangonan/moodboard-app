@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useCallback, RefObject } from 'react'
-import type { MoodboardImage } from './types'
+import type { MoodboardImage, ExportResolutionKey } from './types'
+import { EXPORT_RESOLUTIONS } from './types'
 
 interface UseExportOptions {
   gridRef: RefObject<HTMLDivElement>
@@ -12,6 +13,8 @@ interface UseExportOptions {
 
 interface UseExportReturn {
   isExporting: boolean
+  selectedResolution: ExportResolutionKey
+  setSelectedResolution: (resolution: ExportResolutionKey) => void
   handleExport: () => Promise<void>
 }
 
@@ -53,6 +56,7 @@ function calculateCoverCrop(
 
 export function useExport({ gridRef, imageCount, images, onError }: UseExportOptions): UseExportReturn {
   const [isExporting, setIsExporting] = useState(false)
+  const [selectedResolution, setSelectedResolution] = useState<ExportResolutionKey>('uhd')
 
   const handleExport = useCallback(async () => {
     if (!gridRef.current || imageCount === 0) return
@@ -63,18 +67,23 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
       const gridContainer = gridRef.current
       const gridRect = gridContainer.getBoundingClientRect()
 
-      // Create canvas at 2x resolution for crisp export
-      const scale = 2
+      // Get target resolution
+      const targetRes = EXPORT_RESOLUTIONS[selectedResolution]
+
+      // Calculate scale factor to reach target resolution
+      // Scale based on width to maintain aspect ratio
+      const scale = targetRes.width / gridRect.width
+
       const canvas = document.createElement('canvas')
-      canvas.width = gridRect.width * scale
-      canvas.height = gridRect.height * scale
+      canvas.width = targetRes.width
+      canvas.height = targetRes.height
 
       const ctx = canvas.getContext('2d')
       if (!ctx) {
         throw new Error('Could not get canvas context')
       }
 
-      // Scale context for 2x resolution
+      // Scale context to target resolution
       ctx.scale(scale, scale)
 
       // Find all grid items and their positions
@@ -149,9 +158,9 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
         }
       }
 
-      // Download the canvas as PNG
+      // Download the canvas as PNG with resolution in filename
       const link = document.createElement('a')
-      link.download = 'moodboard.png'
+      link.download = `moodboard-${selectedResolution}.png`
       link.href = canvas.toDataURL('image/png')
       link.click()
 
@@ -161,7 +170,7 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
     } finally {
       setIsExporting(false)
     }
-  }, [gridRef, imageCount, images, onError])
+  }, [gridRef, imageCount, images, onError, selectedResolution])
 
-  return { isExporting, handleExport }
+  return { isExporting, selectedResolution, setSelectedResolution, handleExport }
 }

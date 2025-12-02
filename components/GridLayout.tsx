@@ -4,12 +4,14 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
 import { useImageUpload, useExport, useImagePan } from '../hooks'
+import { CANVAS_ASPECT_RATIO, EXPORT_RESOLUTIONS, ExportResolutionKey } from '../hooks/types'
 
 const COLUMN_NUMBER = 10
 const BASE_ROW_HEIGHT = 50
 
 const GridLayoutComponent = () => {
-  const [containerWidthPx, setContainerWidthPx] = useState(1000)
+  const [containerWidthPx, setContainerWidthPx] = useState(960)
+  const [containerHeightPx, setContainerHeightPx] = useState(540)
   const gridRef = useRef<HTMLDivElement>(null)
 
   // Initialize hooks
@@ -25,7 +27,7 @@ const GridLayoutComponent = () => {
     handleDelete
   } = useImageUpload({ containerWidthPx })
 
-  const { isExporting, handleExport } = useExport({
+  const { isExporting, selectedResolution, setSelectedResolution, handleExport } = useExport({
     gridRef: gridRef as React.RefObject<HTMLDivElement>,
     imageCount: images.length,
     images,
@@ -41,11 +43,28 @@ const GridLayoutComponent = () => {
     checkIfImageNeedsRepositioning
   } = useImagePan({ images, setImages })
 
-  // Handle window resize
+  // Handle window resize - maintain 16:9 aspect ratio
   useEffect(() => {
     const updateSize = () => {
       const vw = window.innerWidth || 1024
-      setContainerWidthPx(Math.max(800, vw * 0.8))
+      const vh = window.innerHeight || 768
+
+      // Calculate max dimensions while maintaining 16:9
+      const maxWidth = Math.min(vw * 0.9, 1600)
+      const maxHeight = vh * 0.7
+
+      // Determine which dimension is the constraint
+      let width = maxWidth
+      let height = width / CANVAS_ASPECT_RATIO
+
+      // If height exceeds max, constrain by height instead
+      if (height > maxHeight) {
+        height = maxHeight
+        width = height * CANVAS_ASPECT_RATIO
+      }
+
+      setContainerWidthPx(Math.round(width))
+      setContainerHeightPx(Math.round(height))
     }
     updateSize()
     window.addEventListener('resize', updateSize)
@@ -109,7 +128,7 @@ const GridLayoutComponent = () => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        style={{ width: containerWidthPx }}
+        style={{ width: containerWidthPx, height: containerHeightPx }}
       >
         {images.length === 0 && (
           <p className="drop-message">Drag images here to upload</p>
@@ -187,13 +206,27 @@ const GridLayoutComponent = () => {
         )}
       </div>
       {images.length > 0 && (
-        <button
-          className="export-button"
-          onClick={handleExport}
-          disabled={isExporting}
-        >
-          {isExporting ? 'Exporting...' : 'Export Moodboard'}
-        </button>
+        <div className="export-controls">
+          <select
+            className="resolution-select"
+            value={selectedResolution}
+            onChange={(e) => setSelectedResolution(e.target.value as ExportResolutionKey)}
+            disabled={isExporting}
+          >
+            {Object.values(EXPORT_RESOLUTIONS).map((res) => (
+              <option key={res.key} value={res.key}>
+                {res.label}
+              </option>
+            ))}
+          </select>
+          <button
+            className="export-button"
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? 'Exporting...' : 'Export'}
+          </button>
+        </div>
       )}
     </div>
   )

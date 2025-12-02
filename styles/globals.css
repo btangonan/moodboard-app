@@ -170,6 +170,46 @@ body {
   padding: 2px !important;
 }
 
+.export-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.resolution-select {
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: white;
+  background-color: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.resolution-select:hover {
+  background-color: #444;
+  border-color: #555;
+}
+
+.resolution-select:disabled {
+  background-color: #222;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.resolution-select option {
+  background-color: #333;
+  color: white;
+  padding: 8px;
+}
+
 .export-button {
   padding: 12px 24px;
   font-size: 1rem;
