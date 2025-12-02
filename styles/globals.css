@@ -69,8 +69,9 @@ body {
   text-align: center;
   background-color: #111;
   position: relative;
-  width: 100%;
-  aspect-ratio: 16/9;
+  overflow: hidden;
+  min-height: 200px;
+  box-sizing: border-box;
 }
 
 .drop-zone.dragging-over {
@@ -174,6 +175,9 @@ body {
   display: flex;
   gap: 12px;
   align-items: center;
+  position: relative;
+  z-index: 100;
+  flex-shrink: 0;
 }
 
 .resolution-select {
