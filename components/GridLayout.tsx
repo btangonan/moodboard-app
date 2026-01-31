@@ -12,6 +12,7 @@ const BASE_ROW_HEIGHT = 50
 const GridLayoutComponent = () => {
   const [containerWidthPx, setContainerWidthPx] = useState(960)
   const [containerHeightPx, setContainerHeightPx] = useState(540)
+  const [gridGap, setGridGap] = useState(4)
   const gridRef = useRef<HTMLDivElement>(null)
 
   // Initialize hooks
@@ -27,7 +28,7 @@ const GridLayoutComponent = () => {
     handleDelete
   } = useImageUpload({ containerWidthPx })
 
-  const { isExporting, selectedResolution, setSelectedResolution, handleExport } = useExport({
+  const { isExporting, selectedResolution, setSelectedResolution, showLabels, setShowLabels, handleExport } = useExport({
     gridRef: gridRef as React.RefObject<HTMLDivElement>,
     imageCount: images.length,
     images,
@@ -140,6 +141,7 @@ const GridLayoutComponent = () => {
             cols={COLUMN_NUMBER}
             rowHeight={BASE_ROW_HEIGHT}
             width={containerWidthPx}
+            margin={[gridGap, gridGap]}
             isDraggable
             isResizable
             preventCollision={false}
@@ -207,6 +209,29 @@ const GridLayoutComponent = () => {
       </div>
       {images.length > 0 && (
         <div className="export-controls">
+          <div className="gap-control">
+            <span className="gap-label">Gap</span>
+            <input
+              type="range"
+              min="0"
+              max="16"
+              step="2"
+              value={gridGap}
+              onChange={(e) => setGridGap(Number(e.target.value))}
+              disabled={isExporting}
+              className="gap-slider"
+            />
+            <span className="gap-value">{gridGap}px</span>
+          </div>
+          <label className="labels-checkbox">
+            <input
+              type="checkbox"
+              checked={showLabels}
+              onChange={(e) => setShowLabels(e.target.checked)}
+              disabled={isExporting}
+            />
+            <span>Position Labels</span>
+          </label>
           <select
             className="resolution-select"
             value={selectedResolution}
