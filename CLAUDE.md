@@ -1,9 +1,11 @@
+# CLAUDE.md — Project Contract (Auto-Updated)
+
 # CLAUDE.md — Project Memory Contract
 
 **Purpose**: Follow this in every session for this repo. Keep memory sharp. Keep outputs concrete. Cut rework.
 
 ## 🧠 Project Memory (Chroma)
-Use server `chroma`. Collection `project_memory`.
+Use server `chroma`. Collection `my_grid_app_memory`.
 
 Log after any confirmed fix, decision, gotcha, or preference.
 
@@ -15,11 +17,11 @@ Log after any confirmed fix, decision, gotcha, or preference.
 ### Chroma Calls
 ```javascript
 // Create once:
-mcp__chroma__chroma_create_collection { "collection_name": "project_memory" }
+mcp__chroma__chroma_create_collection { "collection_name": "my_grid_app_memory" }
 
 // Add:
 mcp__chroma__chroma_add_documents {
-  "collection_name": "project_memory",
+  "collection_name": "my_grid_app_memory",
   "documents": ["<text>"],
   "metadatas": [{"type":"<type>","tags":"a,b,c","source":"<src>"}],
   "ids": ["<stable-id>"]
@@ -27,7 +29,7 @@ mcp__chroma__chroma_add_documents {
 
 // Query (start with 5; escalate only if <3 strong hits):
 mcp__chroma__chroma_query_documents {
-  "collection_name": "project_memory",
+  "collection_name": "my_grid_app_memory",
   "query_texts": ["<query>"],
   "n_results": 5
 }
@@ -65,3 +67,5 @@ For code, return unified diff or patchable files. For scripts, include exact com
 
 ## 🛡️ Safety
 No secrets in `.chroma` or transcripts. Respect rate limits. Propose batching if needed.
+
+<!-- Auto-updated collection to my_grid_app_memory at 2025-11-25 00:27:21 -->
