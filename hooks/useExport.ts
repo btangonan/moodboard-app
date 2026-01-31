@@ -15,6 +15,8 @@ interface UseExportReturn {
   isExporting: boolean
   selectedResolution: ExportResolutionKey
   setSelectedResolution: (resolution: ExportResolutionKey) => void
+  showLabels: boolean
+  setShowLabels: (show: boolean) => void
   handleExport: () => Promise<void>
 }
 
@@ -54,9 +56,48 @@ function calculateCoverCrop(
   return { sx, sy, sw, sh }
 }
 
+// Calculate row and position labels for images based on grid positions
+function calculatePositionLabels(images: MoodboardImage[]): Map<string, string> {
+  const labels = new Map<string, string>()
+
+  // Sort images by y (row) then x (position within row)
+  const sorted = [...images].sort((a, b) => {
+    // Group by approximate row (same y value means same row)
+    if (a.y !== b.y) return a.y - b.y
+    return a.x - b.x
+  })
+
+  // Assign row numbers based on unique y values
+  const rowMap = new Map<number, number>()
+  let currentRow = 0
+  let lastY = -1
+
+  for (const img of sorted) {
+    if (img.y !== lastY) {
+      currentRow++
+      rowMap.set(img.y, currentRow)
+      lastY = img.y
+    }
+  }
+
+  // Count positions within each row
+  const rowPositionCount = new Map<number, number>()
+
+  for (const img of sorted) {
+    const row = rowMap.get(img.y) || 1
+    const posCount = (rowPositionCount.get(img.y) || 0) + 1
+    rowPositionCount.set(img.y, posCount)
+
+    labels.set(img.i, `R${row}P${posCount}`)
+  }
+
+  return labels
+}
+
 export function useExport({ gridRef, imageCount, images, onError }: UseExportOptions): UseExportReturn {
   const [isExporting, setIsExporting] = useState(false)
   const [selectedResolution, setSelectedResolution] = useState<ExportResolutionKey>('uhd')
+  const [showLabels, setShowLabels] = useState(false)
 
   const handleExport = useCallback(async () => {
     if (!gridRef.current || imageCount === 0) return
@@ -158,6 +199,52 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
         }
       }
 
+      // Draw position labels if enabled
+      if (showLabels) {
+        const positionLabels = calculatePositionLabels(images)
+
+        for (const gridItem of Array.from(gridItems)) {
+          const imageId = gridItem.getAttribute('data-grid-id')
+          const imgElement = gridItem.querySelector('img') as HTMLImageElement | null
+
+          if (!imgElement || !imageId) continue
+
+          const label = positionLabels.get(imageId)
+          if (!label) continue
+
+          // Get position relative to grid container
+          const itemRect = imgElement.getBoundingClientRect()
+          const dx = itemRect.left - gridRect.left
+          const dy = itemRect.top - gridRect.top
+          const dh = itemRect.height
+
+          // Calculate font size based on image height (responsive)
+          const fontSize = Math.max(12, Math.min(24, dh * 0.12))
+          const padding = fontSize * 0.4
+          const labelX = dx + padding
+          const labelY = dy + dh - padding
+
+          // Measure text for background
+          ctx.font = `bold ${fontSize}px Arial, sans-serif`
+          const textMetrics = ctx.measureText(label)
+          const textWidth = textMetrics.width
+          const textHeight = fontSize
+
+          // Draw semi-transparent background
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+          ctx.fillRect(
+            labelX - padding * 0.5,
+            labelY - textHeight,
+            textWidth + padding,
+            textHeight + padding * 0.5
+          )
+
+          // Draw text
+          ctx.fillStyle = 'white'
+          ctx.fillText(label, labelX, labelY)
+        }
+      }
+
       // Download the canvas as PNG with resolution in filename
       const link = document.createElement('a')
       link.download = `moodboard-${selectedResolution}.png`
@@ -170,7 +257,7 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
     } finally {
       setIsExporting(false)
     }
-  }, [gridRef, imageCount, images, onError, selectedResolution])
+  }, [gridRef, imageCount, images, onError, selectedResolution, showLabels])
 
-  return { isExporting, selectedResolution, setSelectedResolution, handleExport }
+  return { isExporting, selectedResolution, setSelectedResolution, showLabels, setShowLabels, handleExport }
 }
