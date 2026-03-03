@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
+import { ImagePlus } from 'lucide-react'
 import { useImageUpload, useExport, useImagePan, useUndoHistory } from '../hooks'
 import { CANVAS_ASPECT_RATIO, EXPORT_RESOLUTIONS, ExportResolutionKey } from '../hooks/types'
 import type { MoodboardImage } from '../hooks/types'
@@ -18,6 +19,7 @@ const GridLayoutComponent = () => {
   const [gridGap, setGridGap] = useState(4)
   const maxRows = Math.floor((containerHeightPx - 20) / BASE_ROW_HEIGHT)
   const gridRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const gapSnapshotTakenRef = useRef(false)
 
   const undoHistory = useUndoHistory<UndoSnapshot>()
@@ -39,7 +41,8 @@ const GridLayoutComponent = () => {
     handleDrop,
     handleDragOver,
     handleDragLeave,
-    handleDelete
+    handleDelete,
+    handleFileSelect
   } = useImageUpload({ containerWidthPx, onBeforeChange: pushSnapshot })
 
   const { isExporting, selectedResolution, setSelectedResolution, showLabels, setShowLabels, handleExport } = useExport({
@@ -195,8 +198,19 @@ const GridLayoutComponent = () => {
         style={{ width: containerWidthPx, height: containerHeightPx }}
       >
         {images.length === 0 && (
-          <p className="drop-message">Drag images here to upload</p>
+          <div className="drop-message" onClick={() => fileInputRef.current?.click()}>
+            <ImagePlus size={52} strokeWidth={1.5}/>
+            <span>Drop images to make a moodboard</span>
+          </div>
         )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileSelect}
+        />
         {images.length > 0 && (
           <GridLayout
             className="layout"

@@ -23,6 +23,7 @@ interface UseImageUploadReturn {
   handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void
   handleDragLeave: (e: React.DragEvent<HTMLDivElement>) => void
   handleDelete: (imageId: string) => void
+  handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 
 // Convert file to base64 data URL (works across tabs)
@@ -52,6 +53,58 @@ export function useImageUpload({ containerWidthPx, onBeforeChange }: UseImageUpl
     return { w, h }
   }, [containerWidthPx])
 
+  const processFiles = useCallback((files: File[]) => {
+    setError(null)
+    const allFiles = files.filter(f => f.type.startsWith('image/'))
+    if (!allFiles.length) return
+
+    onBeforeChange?.()
+
+    const oversizedFiles = allFiles.filter(f => f.size > MAX_FILE_SIZE_BYTES)
+    const validFiles = allFiles.filter(f => f.size <= MAX_FILE_SIZE_BYTES)
+
+    if (oversizedFiles.length > 0) {
+      const names = oversizedFiles.map(f => f.name).join(', ')
+      setError(`Files too large (max ${MAX_FILE_SIZE_MB}MB): ${names}`)
+      setTimeout(() => setError(null), 5000)
+    }
+
+    if (!validFiles.length) return
+
+    const imagePromises = validFiles.map(async (file, index) => {
+      try {
+        const src = await fileToBase64(file)
+        const id = `img-${Date.now()}-${index}-${Math.random()}`
+
+        return new Promise<MoodboardImage>((resolve) => {
+          const img = new Image()
+          img.src = src
+          img.onload = () => {
+            const { w, h } = calculateGridDimensions(img.naturalWidth, img.naturalHeight)
+            resolve({ src, i: id, x: 0, y: 0, w, h })
+          }
+          img.onerror = () => resolve(null as unknown as MoodboardImage)
+        })
+      } catch {
+        return null as unknown as MoodboardImage
+      }
+    })
+
+    Promise.all(imagePromises).then((newImages) => {
+      const validImages = newImages.filter(Boolean)
+      if (validImages.length === 0) return
+      setImages(prev => {
+        const startIndex = prev.length
+        const positioned = validImages.map((img, i) => ({
+          ...img,
+          x: ((startIndex + i) * 2) % COLUMN_NUMBER,
+          y: Math.floor(((startIndex + i) * 2) / COLUMN_NUMBER)
+        }))
+        return [...prev, ...positioned]
+      })
+    })
+  }, [calculateGridDimensions, onBeforeChange])
+
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDraggingOver(true)
@@ -67,74 +120,16 @@ export function useImageUpload({ containerWidthPx, onBeforeChange }: UseImageUpl
     setImages(prevImages => prevImages.filter(img => img.i !== imageId))
   }, [onBeforeChange])
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      setIsDraggingOver(false)
-      setError(null)
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDraggingOver(false)
+    processFiles(Array.from(e.dataTransfer.files))
+  }, [processFiles])
 
-      const allFiles = Array.from(e.dataTransfer.files).filter(f =>
-        f.type.startsWith('image/')
-      )
-
-      if (!allFiles.length) return
-
-      onBeforeChange?.()
-
-      // Validate file sizes
-      const oversizedFiles = allFiles.filter(f => f.size > MAX_FILE_SIZE_BYTES)
-      const validFiles = allFiles.filter(f => f.size <= MAX_FILE_SIZE_BYTES)
-
-      if (oversizedFiles.length > 0) {
-        const names = oversizedFiles.map(f => f.name).join(', ')
-        setError(`Files too large (max ${MAX_FILE_SIZE_MB}MB): ${names}`)
-        setTimeout(() => setError(null), 5000)
-      }
-
-      if (!validFiles.length) return
-
-      // Process all files and collect their data (using base64 for cross-tab support)
-      const imagePromises = validFiles.map(async (file, index) => {
-        try {
-          const src = await fileToBase64(file)
-          const id = `img-${Date.now()}-${index}-${Math.random()}`
-
-          return new Promise<MoodboardImage>((resolve) => {
-            const img = new Image()
-            img.src = src
-
-            img.onload = () => {
-              const { w, h } = calculateGridDimensions(img.naturalWidth, img.naturalHeight)
-              resolve({ src, i: id, x: 0, y: 0, w, h })
-            }
-
-            img.onerror = () => {
-              resolve(null as unknown as MoodboardImage)
-            }
-          })
-        } catch {
-          return null as unknown as MoodboardImage
-        }
-      })
-
-      // Wait for all images to load, then add them with correct positions
-      Promise.all(imagePromises).then((newImages) => {
-        const validImages = newImages.filter(Boolean)
-        if (validImages.length === 0) return
-
-        setImages(prev => {
-          const startIndex = prev.length
-          const positioned = validImages.map((img, i) => ({
-            ...img,
-            x: ((startIndex + i) * 2) % COLUMN_NUMBER,
-            y: Math.floor(((startIndex + i) * 2) / COLUMN_NUMBER)
-          }))
-          return [...prev, ...positioned]
-        })
-      })
-    },
-    [calculateGridDimensions, onBeforeChange]
-  )
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    processFiles(Array.from(e.target.files || []))
+    e.target.value = '' // reset so the same files can be re-selected
+  }, [processFiles])
 
   return {
     images,
@@ -145,6 +140,7 @@ export function useImageUpload({ containerWidthPx, onBeforeChange }: UseImageUpl
     handleDrop,
     handleDragOver,
     handleDragLeave,
-    handleDelete
+    handleDelete,
+    handleFileSelect
   }
 }

@@ -143,11 +143,22 @@ h1 {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--text-muted);
+  color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: color var(--transition);
+  white-space: nowrap;
+}
+
+.drop-message:hover {
+  color: var(--text-secondary);
 }
 
 /* ─── Grid Item ──────────────────────────────────────── */
