@@ -6,6 +6,7 @@ import type { MoodboardImage, DragInfo } from './types'
 interface UseImagePanOptions {
   images: MoodboardImage[]
   setImages: React.Dispatch<React.SetStateAction<MoodboardImage[]>>
+  onBeforeChange?: () => void
 }
 
 interface UseImagePanReturn {
@@ -14,7 +15,7 @@ interface UseImagePanReturn {
   checkIfImageNeedsRepositioning: (container: HTMLElement, img: HTMLImageElement) => boolean
 }
 
-export function useImagePan({ images, setImages }: UseImagePanOptions): UseImagePanReturn {
+export function useImagePan({ images, setImages, onBeforeChange }: UseImagePanOptions): UseImagePanReturn {
   const [dragInfo, setDragInfo] = useState<DragInfo | null>(null)
 
   const calculateMaxOffset = useCallback((container: HTMLElement, img: HTMLImageElement) => {
@@ -62,6 +63,8 @@ export function useImagePan({ images, setImages }: UseImagePanOptions): UseImage
     const maxOffset = calculateMaxOffset(container, imgElement)
     if (maxOffset.x === 0 && maxOffset.y === 0) return
 
+    onBeforeChange?.()
+
     const currentOffset = image.offset || { x: 0, y: 0 }
 
     setDragInfo({
@@ -71,7 +74,7 @@ export function useImagePan({ images, setImages }: UseImagePanOptions): UseImage
       currentOffset,
       maxOffset
     })
-  }, [images, calculateMaxOffset, checkIfImageNeedsRepositioning])
+  }, [images, calculateMaxOffset, checkIfImageNeedsRepositioning, onBeforeChange])
 
   // Handle mouse move/up for panning
   useEffect(() => {

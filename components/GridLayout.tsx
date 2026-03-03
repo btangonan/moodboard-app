@@ -3,8 +3,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import GridLayout from 'react-grid-layout'
 import type { Layout } from 'react-grid-layout'
-import { useImageUpload, useExport, useImagePan } from '../hooks'
+import { useImageUpload, useExport, useImagePan, useUndoHistory } from '../hooks'
 import { CANVAS_ASPECT_RATIO, EXPORT_RESOLUTIONS, ExportResolutionKey } from '../hooks/types'
+import type { MoodboardImage } from '../hooks/types'
+
+type UndoSnapshot = { images: MoodboardImage[], gridGap: number }
 
 const COLUMN_NUMBER = 10
 const BASE_ROW_HEIGHT = 50
@@ -14,6 +17,16 @@ const GridLayoutComponent = () => {
   const [containerHeightPx, setContainerHeightPx] = useState(540)
   const [gridGap, setGridGap] = useState(4)
   const gridRef = useRef<HTMLDivElement>(null)
+  const gapSnapshotTakenRef = useRef(false)
+
+  const undoHistory = useUndoHistory<UndoSnapshot>()
+
+  // Snapshot ref lets pushSnapshot be called before images/gridGap state is
+  // updated — hooks call it synchronously before their setState calls.
+  const snapshotRef = useRef<{ images: MoodboardImage[], gridGap: number }>({ images: [], gridGap: 4 })
+  const pushSnapshot = useCallback(() => {
+    undoHistory.push({ ...snapshotRef.current })
+  }, [undoHistory.push])
 
   // Initialize hooks
   const {
@@ -26,7 +39,7 @@ const GridLayoutComponent = () => {
     handleDragOver,
     handleDragLeave,
     handleDelete
-  } = useImageUpload({ containerWidthPx })
+  } = useImageUpload({ containerWidthPx, onBeforeChange: pushSnapshot })
 
   const { isExporting, selectedResolution, setSelectedResolution, showLabels, setShowLabels, handleExport } = useExport({
     gridRef: gridRef as React.RefObject<HTMLDivElement>,
@@ -42,7 +55,7 @@ const GridLayoutComponent = () => {
     handleImageMouseDown,
     calculateObjectPosition,
     checkIfImageNeedsRepositioning
-  } = useImagePan({ images, setImages })
+  } = useImagePan({ images, setImages, onBeforeChange: pushSnapshot })
 
   // Handle window resize - maintain 16:9 aspect ratio
   useEffect(() => {
@@ -70,6 +83,53 @@ const GridLayoutComponent = () => {
     updateSize()
     window.addEventListener('resize', updateSize)
     return () => window.removeEventListener('resize', updateSize)
+  }, [])
+
+  // Keep snapshot ref current so pushSnapshot always captures latest state
+  useEffect(() => {
+    snapshotRef.current = { images, gridGap }
+  }, [images, gridGap])
+
+  // Undo handler
+  const handleUndo = useCallback(() => {
+    const snapshot = undoHistory.undo()
+    if (snapshot) {
+      setImages(snapshot.images)
+      setGridGap(snapshot.gridGap)
+    }
+  }, [undoHistory.undo, setImages, setGridGap])
+
+  // Cmd+Z / Ctrl+Z listener
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        handleUndo()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [handleUndo])
+
+  // Drag/resize start — snapshot before layout changes propagate
+  const onDragStart = useCallback(() => {
+    pushSnapshot()
+  }, [pushSnapshot])
+
+  const onResizeStart = useCallback(() => {
+    pushSnapshot()
+  }, [pushSnapshot])
+
+  // Gap slider — one snapshot per gesture
+  const handleGapMouseDown = useCallback(() => {
+    if (!gapSnapshotTakenRef.current) {
+      pushSnapshot()
+      gapSnapshotTakenRef.current = true
+    }
+  }, [pushSnapshot])
+
+  const handleGapMouseUp = useCallback(() => {
+    gapSnapshotTakenRef.current = false
   }, [])
 
   // Handle layout changes from grid
@@ -146,6 +206,8 @@ const GridLayoutComponent = () => {
             isResizable
             preventCollision={false}
             onLayoutChange={onLayoutChange}
+            onDragStart={onDragStart}
+            onResizeStart={onResizeStart}
           >
             {images.map(img => (
               <div key={img.i} className="grid-item" data-grid-id={img.i}>
@@ -218,6 +280,8 @@ const GridLayoutComponent = () => {
               step="2"
               value={gridGap}
               onChange={(e) => setGridGap(Number(e.target.value))}
+              onMouseDown={handleGapMouseDown}
+              onMouseUp={handleGapMouseUp}
               disabled={isExporting}
               className="gap-slider"
             />

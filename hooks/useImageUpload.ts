@@ -10,6 +10,7 @@ const BASE_ROW_HEIGHT = 50
 
 interface UseImageUploadOptions {
   containerWidthPx: number
+  onBeforeChange?: () => void
 }
 
 interface UseImageUploadReturn {
@@ -34,7 +35,7 @@ function fileToBase64(file: File): Promise<string> {
   })
 }
 
-export function useImageUpload({ containerWidthPx }: UseImageUploadOptions): UseImageUploadReturn {
+export function useImageUpload({ containerWidthPx, onBeforeChange }: UseImageUploadOptions): UseImageUploadReturn {
   const [images, setImages] = useState<MoodboardImage[]>([])
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,8 +63,9 @@ export function useImageUpload({ containerWidthPx }: UseImageUploadOptions): Use
   }, [])
 
   const handleDelete = useCallback((imageId: string) => {
+    onBeforeChange?.()
     setImages(prevImages => prevImages.filter(img => img.i !== imageId))
-  }, [])
+  }, [onBeforeChange])
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -76,6 +78,8 @@ export function useImageUpload({ containerWidthPx }: UseImageUploadOptions): Use
       )
 
       if (!allFiles.length) return
+
+      onBeforeChange?.()
 
       // Validate file sizes
       const oversizedFiles = allFiles.filter(f => f.size > MAX_FILE_SIZE_BYTES)
@@ -129,7 +133,7 @@ export function useImageUpload({ containerWidthPx }: UseImageUploadOptions): Use
         })
       })
     },
-    [calculateGridDimensions]
+    [calculateGridDimensions, onBeforeChange]
   )
 
   return {
