@@ -16,6 +16,7 @@ const GridLayoutComponent = () => {
   const [containerWidthPx, setContainerWidthPx] = useState(960)
   const [containerHeightPx, setContainerHeightPx] = useState(540)
   const [gridGap, setGridGap] = useState(4)
+  const maxRows = Math.floor((containerHeightPx - 20) / BASE_ROW_HEIGHT)
   const gridRef = useRef<HTMLDivElement>(null)
   const gapSnapshotTakenRef = useRef(false)
 
@@ -54,7 +55,8 @@ const GridLayoutComponent = () => {
   const {
     handleImageMouseDown,
     calculateObjectPosition,
-    checkIfImageNeedsRepositioning
+    checkIfImageNeedsRepositioning,
+    panningImageId
   } = useImagePan({ images, setImages, onBeforeChange: pushSnapshot })
 
   // Handle window resize - maintain 16:9 aspect ratio
@@ -171,6 +173,7 @@ const GridLayoutComponent = () => {
 
   return (
     <div className="outer-drop-wrapper">
+      <h1 style={{ width: containerWidthPx }}>MOODBOARDER</h1>
       {error && (
         <div className="error-banner" role="alert">
           <span>{error}</span>
@@ -202,6 +205,7 @@ const GridLayoutComponent = () => {
             rowHeight={BASE_ROW_HEIGHT}
             width={containerWidthPx}
             margin={[gridGap, gridGap]}
+            maxRows={maxRows}
             isDraggable
             isResizable
             preventCollision={false}
@@ -210,7 +214,7 @@ const GridLayoutComponent = () => {
             onResizeStart={onResizeStart}
           >
             {images.map(img => (
-              <div key={img.i} className="grid-item" data-grid-id={img.i}>
+              <div key={img.i} className={`grid-item${panningImageId === img.i ? ' is-panning' : ''}`} data-grid-id={img.i}>
                 <div
                   className="delete-button"
                   onMouseDown={(e) => {
@@ -221,7 +225,10 @@ const GridLayoutComponent = () => {
                   tabIndex={0}
                   aria-label="Delete image"
                 >
-                  ×
+                  <svg viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="2.5" y1="2.5" x2="11.5" y2="11.5"/>
+                    <line x1="11.5" y1="2.5" x2="2.5" y2="11.5"/>
+                  </svg>
                 </div>
                 <div
                   className="image-container"

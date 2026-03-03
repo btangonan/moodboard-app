@@ -13,6 +13,7 @@ interface UseImagePanReturn {
   handleImageMouseDown: (e: React.MouseEvent, imageId: string) => void
   calculateObjectPosition: (img: MoodboardImage, container: HTMLElement, imgElement: HTMLImageElement) => string
   checkIfImageNeedsRepositioning: (container: HTMLElement, img: HTMLImageElement) => boolean
+  panningImageId: string | null
 }
 
 export function useImagePan({ images, setImages, onBeforeChange }: UseImagePanOptions): UseImagePanReturn {
@@ -117,6 +118,7 @@ export function useImagePan({ images, setImages, onBeforeChange }: UseImagePanOp
   return {
     handleImageMouseDown,
     calculateObjectPosition,
-    checkIfImageNeedsRepositioning
+    checkIfImageNeedsRepositioning,
+    panningImageId: dragInfo?.imageId ?? null
   }
 }

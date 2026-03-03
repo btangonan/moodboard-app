@@ -1,32 +1,95 @@
-body {
-  background-color: #000000;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  font-family: 'Roboto', sans-serif;
+/* ─── Design Tokens ─────────────────────────────────── */
+:root {
+  /* Backgrounds (darkest → lightest) */
+  --bg-primary:   #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-tertiary:  #1a1a1a;
+
+  /* Accent Colors */
+  --accent-primary:   #c8ff00;   /* Yellow-green — primary actions, active states */
+  --accent-secondary: #ff6b6b;   /* Coral red — destructive actions, warnings */
+  --accent-success:   #4ade80;   /* Green — success feedback */
+
+  /* Text */
+  --text-primary:   #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-muted:     #71717a;
+
+  /* Borders */
+  --border-color: #2a2a2a;
+  --grid-line:    rgba(200, 255, 0, 0.3);
+
+  /* Interactive overlays */
+  --cell-hover:    rgba(200, 255, 0, 0.15);
+  --cell-selected: rgba(200, 255, 0, 0.4);
+  --cell-copied:   rgba(74, 222, 128, 0.4);
+
+  /* Effects */
+  --shadow:     0 4px 20px rgba(0, 0, 0, 0.6);
+  --radius:     8px;
+  --transition: 0.2s ease;
 }
 
+/* ─── Reset ─────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─── Base ───────────────────────────────────────────── */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── Page Container ─────────────────────────────────── */
+.container {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--accent-primary);
+}
+
+/* ─── Layout ─────────────────────────────────────────── */
 .outer-drop-wrapper {
   display: flex;
   justify-content: center;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding: 10px;
-  background-color: #000000;
-  gap: 20px;
+  padding: 20px;
+  background: var(--bg-primary);
+  gap: 16px;
 }
 
+/* ─── Error Banner ───────────────────────────────────── */
 .error-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  background-color: rgba(239, 68, 68, 0.9);
-  color: white;
-  border-radius: 6px;
-  font-size: 14px;
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--accent-secondary);
+  border: 1px solid var(--accent-secondary);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
   max-width: 80%;
   animation: slideIn 0.3s ease;
 }
@@ -38,13 +101,13 @@ body {
 .error-dismiss {
   background: none;
   border: none;
-  color: white;
+  color: var(--accent-secondary);
   font-size: 20px;
   cursor: pointer;
   padding: 0;
   line-height: 1;
   opacity: 0.8;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition);
 }
 
 .error-dismiss:hover {
@@ -52,31 +115,27 @@ body {
 }
 
 @keyframes slideIn {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(-10px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
 }
 
+/* ─── Drop Zone ──────────────────────────────────────── */
 .drop-zone {
-  border: 2px dashed #444;
-  border-radius: 4px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius);
   padding: 4px;
   text-align: center;
-  background-color: #111;
+  background: var(--bg-secondary);
   position: relative;
   overflow: hidden;
   min-height: 200px;
   box-sizing: border-box;
+  transition: border-color var(--transition), background var(--transition);
 }
 
 .drop-zone.dragging-over {
-  border-color: #2196f3;
-  background-color: rgba(33, 150, 243, 0.1);
+  border-color: var(--accent-primary);
+  background: var(--cell-hover);
 }
 
 .drop-message {
@@ -84,55 +143,24 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: #888;
-  font-size: 1rem;
-  font-weight: 300;
-  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.8;
 }
 
+/* ─── Grid Item ──────────────────────────────────────── */
 .drag-handle {
   cursor: move;
 }
 
-.delete-button {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 22px;
-  height: 22px;
-  border-radius: 11px;
-  background-color: rgba(255, 0, 0, 0.8);
-  color: white;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 11;
-  opacity: 0;
-  transition: all 0.2s ease;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  pointer-events: auto !important;
-}
-
-.grid-item:hover .delete-button {
-  opacity: 0.8;
-}
-
-.delete-button:hover {
-  opacity: 1 !important;
-  transform: scale(1.1);
-  background-color: red;
-}
-
 .grid-item {
-  background-color: #222;
+  background: var(--bg-tertiary);
   border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  transition: box-shadow var(--transition), transform var(--transition);
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -141,8 +169,8 @@ body {
 }
 
 .grid-item:hover {
-  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(200, 255, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 .grid-item img {
@@ -151,31 +179,91 @@ body {
   object-fit: cover;
 }
 
-.react-resizable-handle {
-  cursor: se-resize;
+/* ─── Delete Button ──────────────────────────────────── */
+.delete-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  background: rgba(10, 10, 10, 0.5);
+  border-radius: 4px;
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 11;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition), transform var(--transition);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  pointer-events: auto !important;
 }
 
-.react-resizable-handle:hover {
+.grid-item:hover .delete-button {
   opacity: 1;
 }
 
-/* Add tighter grid spacing */
+.delete-button:hover {
+  opacity: 1 !important;
+  transform: scale(1.2);
+}
+
+.grid-item.is-panning .delete-button {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* Lock reposition handle visible on the image being panned */
+.grid-item.is-panning .reposition-handle {
+  opacity: 1;
+}
+
+/* Lock glow + handle on the image being panned (regardless of hover) */
+.grid-item.is-panning {
+  box-shadow: 0 4px 20px rgba(200, 255, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+/* While panning: suppress hover glow on non-panning images */
+.outer-drop-wrapper:has(.is-panning) .grid-item:not(.is-panning):hover {
+  box-shadow: var(--shadow);
+  transform: none;
+}
+
+/* While panning: suppress hover buttons + resize handle on non-panning images */
+.outer-drop-wrapper:has(.is-panning) .grid-item:not(.is-panning):hover .delete-button,
+.outer-drop-wrapper:has(.is-panning) .grid-item:not(.is-panning):hover .reposition-handle {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+.outer-drop-wrapper:has(.is-panning) .grid-item:not(.is-panning):hover .react-resizable-handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── Grid Layout ────────────────────────────────────── */
 .layout {
   margin: 0 !important;
 }
 
-
+/* ─── Export Controls ────────────────────────────────── */
 .export-controls {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
   position: relative;
   z-index: 100;
   flex-shrink: 0;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
 }
 
+/* ─── Gap Slider ─────────────────────────────────────── */
 .gap-control {
   display: flex;
   align-items: center;
@@ -183,8 +271,9 @@ body {
 }
 
 .gap-label {
-  color: #888;
+  color: var(--text-secondary);
   font-size: 0.85rem;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -194,7 +283,7 @@ body {
   height: 4px;
   -webkit-appearance: none;
   appearance: none;
-  background: #444;
+  background: var(--border-color);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -205,7 +294,7 @@ body {
   appearance: none;
   width: 14px;
   height: 14px;
-  background: #2196f3;
+  background: var(--accent-primary);
   border-radius: 50%;
   cursor: pointer;
   transition: transform 0.1s ease;
@@ -218,7 +307,7 @@ body {
 .gap-slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
-  background: #2196f3;
+  background: var(--accent-primary);
   border-radius: 50%;
   cursor: pointer;
   border: none;
@@ -230,30 +319,34 @@ body {
 }
 
 .gap-value {
-  color: #ccc;
+  color: var(--text-primary);
   font-size: 0.85rem;
+  font-weight: 500;
   min-width: 32px;
 }
 
+/* ─── Labels Checkbox ────────────────────────────────── */
 .labels-checkbox {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #ccc;
-  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
   user-select: none;
+  transition: color var(--transition);
 }
 
 .labels-checkbox input[type="checkbox"] {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: #2196f3;
+  accent-color: var(--accent-primary);
 }
 
 .labels-checkbox:hover {
-  color: white;
+  color: var(--text-primary);
 }
 
 .labels-checkbox input:disabled {
@@ -265,71 +358,72 @@ body {
   opacity: 0.5;
 }
 
+/* ─── Resolution Select ──────────────────────────────── */
 .resolution-select {
-  padding: 12px 16px;
+  padding: 10px 36px 10px 16px;
   font-size: 0.9rem;
   font-weight: 500;
-  color: white;
-  background-color: #333;
-  border: 1px solid #444;
-  border-radius: 4px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition);
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1aa' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
-  padding-right: 36px;
 }
 
-.resolution-select:hover {
-  background-color: #444;
-  border-color: #555;
+.resolution-select:hover:not(:disabled) {
+  background-color: var(--bg-primary);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
 }
 
 .resolution-select:disabled {
-  background-color: #222;
-  color: #666;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .resolution-select option {
-  background-color: #333;
-  color: white;
-  padding: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
+/* ─── Export Button (Primary) ────────────────────────── */
 .export-button {
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 500;
-  color: white;
-  background-color: #2196f3;
-  border: none;
-  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--bg-primary);
+  background: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  transition: all var(--transition);
+  letter-spacing: 0.02em;
 }
 
-.export-button:hover {
-  background-color: #1976d2;
-  transform: translateY(-1px);
+.export-button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--accent-primary);
 }
 
 .export-button:disabled {
-  background-color: #666;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
+/* ─── Image Container ────────────────────────────────── */
 .image-container {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #111;
+  background: var(--bg-primary);
 }
 
 .image-container img {
@@ -341,34 +435,34 @@ body {
   transition: transform 0.1s ease-out;
 }
 
+/* ─── Reposition Handle ──────────────────────────────── */
 .reposition-handle {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 6px;
+  left: 6px;
   width: 24px;
   height: 24px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(10, 10, 10, 0.5);
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: move;
   z-index: 10;
-  color: white;
+  color: var(--accent-primary);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition), color var(--transition);
 }
 
 .image-container:hover .reposition-handle {
   opacity: 1;
 }
 
-/* Show handle when image needs repositioning */
-.image-container.needs-repositioning .reposition-handle {
+.reposition-handle:hover {
   opacity: 1;
-  background: rgba(0, 0, 0, 0.7);
 }
 
+/* ─── Legacy / Unused ────────────────────────────────── */
 .image-position-handle {
   position: absolute;
   top: 6px;
@@ -376,15 +470,15 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 4px;
-  background-color: rgba(255, 255, 255, 0.15);
-  color: white;
+  background: rgba(10, 10, 10, 0.7);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: move;
   z-index: 1000;
   opacity: 0;
-  transition: all 0.2s ease;
+  transition: all var(--transition);
   padding: 4px;
 }
 
@@ -394,14 +488,8 @@ body {
 
 .image-position-handle:hover {
   opacity: 1 !important;
-  background-color: rgba(255, 255, 255, 0.25);
+  color: var(--accent-primary);
   transform: scale(1.1);
-}
-
-.image-position-handle svg {
-  width: 20px;
-  height: 20px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 .image-drag-indicator {
@@ -410,16 +498,62 @@ body {
   left: 0;
   right: 0;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
-  color: white;
+  color: var(--text-primary);
   padding: 20px 10px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   text-align: center;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--transition);
   pointer-events: none;
   z-index: 2;
 }
 
 .image-container:hover .image-drag-indicator {
   opacity: 1;
-} 
+}
+
+/* ─── React Grid Layout Overrides ────────────────────── */
+.react-resizable-handle {
+  cursor: se-resize;
+  opacity: 0;
+  transition: opacity var(--transition);
+  bottom: 6px !important;
+  right: 6px !important;
+}
+
+.react-resizable-handle:hover,
+.grid-item:hover .react-resizable-handle {
+  opacity: 1;
+}
+
+.react-resizable-handle::after {
+  border-color: var(--accent-primary) !important;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: var(--cell-hover) !important;
+  border: 1px solid var(--grid-line);
+  border-radius: 4px;
+}
+
+/* ─── Animations ─────────────────────────────────────── */
+@keyframes flash-success {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 20px var(--accent-success); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(0.98); }
+}
+
+@keyframes copy-flash {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.05); box-shadow: 0 0 20px var(--accent-success); }
+}
+
+/* ─── Responsive ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  .outer-drop-wrapper { padding: 12px; }
+  .export-controls { flex-direction: column; gap: 12px; }
+}
