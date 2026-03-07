@@ -111,13 +111,35 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
       // Get target resolution
       const targetRes = EXPORT_RESOLUTIONS[selectedResolution]
 
-      // Calculate scale factor to reach target resolution
-      // Scale based on width to maintain aspect ratio
-      const scale = targetRes.width / gridRect.width
+      // Find all grid items and their positions
+      const gridItems = gridContainer.querySelectorAll('.grid-item')
+      const allItems = Array.from(gridItems)
+
+      // First pass: find tight content bounding box (excludes border/padding/gap offsets)
+      let minDx = Infinity, minDy = Infinity, maxRight = 0, maxBottom = 0
+      for (const gridItem of allItems) {
+        const imgEl = gridItem.querySelector('img') as HTMLImageElement | null
+        if (!imgEl) continue
+        const r = imgEl.getBoundingClientRect()
+        const left = r.left - gridRect.left
+        const top = r.top - gridRect.top
+        if (left < minDx) minDx = left
+        if (top < minDy) minDy = top
+        if (left + r.width > maxRight) maxRight = left + r.width
+        if (top + r.height > maxBottom) maxBottom = top + r.height
+      }
+
+      if (minDx === Infinity) return
+
+      const contentW = maxRight - minDx
+      const contentH = maxBottom - minDy
+
+      // Scale to target resolution width; height follows content (full bleed, no transparent border)
+      const scale = targetRes.width / contentW
 
       const canvas = document.createElement('canvas')
       canvas.width = targetRes.width
-      canvas.height = targetRes.height
+      canvas.height = Math.round(contentH * scale)
 
       const ctx = canvas.getContext('2d')
       if (!ctx) {
@@ -127,11 +149,8 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
       // Scale context to target resolution
       ctx.scale(scale, scale)
 
-      // Find all grid items and their positions
-      const gridItems = gridContainer.querySelectorAll('.grid-item')
-
       // Process each grid item
-      for (const gridItem of Array.from(gridItems)) {
+      for (const gridItem of allItems) {
         const imageId = gridItem.getAttribute('data-grid-id')
         const imgElement = gridItem.querySelector('img') as HTMLImageElement | null
 
@@ -140,10 +159,10 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
         // Get the image data from state for offset info
         const imageData = images.find(img => img.i === imageId)
 
-        // Get position relative to grid container
+        // Get position relative to content origin (no border/padding/gap offset)
         const itemRect = imgElement.getBoundingClientRect()
-        const dx = itemRect.left - gridRect.left
-        const dy = itemRect.top - gridRect.top
+        const dx = itemRect.left - gridRect.left - minDx
+        const dy = itemRect.top - gridRect.top - minDy
         const dw = itemRect.width
         const dh = itemRect.height
 
@@ -203,7 +222,7 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
       if (showLabels) {
         const positionLabels = calculatePositionLabels(images)
 
-        for (const gridItem of Array.from(gridItems)) {
+        for (const gridItem of allItems) {
           const imageId = gridItem.getAttribute('data-grid-id')
           const imgElement = gridItem.querySelector('img') as HTMLImageElement | null
 
@@ -212,10 +231,10 @@ export function useExport({ gridRef, imageCount, images, onError }: UseExportOpt
           const label = positionLabels.get(imageId)
           if (!label) continue
 
-          // Get position relative to grid container
+          // Get position relative to content origin (no border/padding/gap offset)
           const itemRect = imgElement.getBoundingClientRect()
-          const dx = itemRect.left - gridRect.left
-          const dy = itemRect.top - gridRect.top
+          const dx = itemRect.left - gridRect.left - minDx
+          const dy = itemRect.top - gridRect.top - minDy
           const dh = itemRect.height
 
           // Calculate font size based on image height (responsive)

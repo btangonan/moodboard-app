@@ -17,7 +17,7 @@ const GridLayoutComponent = () => {
   const [containerWidthPx, setContainerWidthPx] = useState(960)
   const [containerHeightPx, setContainerHeightPx] = useState(540)
   const [gridGap, setGridGap] = useState(4)
-  const maxRows = Math.floor((containerHeightPx - 20) / BASE_ROW_HEIGHT)
+  const maxRows = Math.floor((containerHeightPx - gridGap - 20) / (BASE_ROW_HEIGHT + gridGap))
   const gridRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const gapSnapshotTakenRef = useRef(false)
@@ -94,6 +94,21 @@ const GridLayoutComponent = () => {
   useEffect(() => {
     snapshotRef.current = { images, gridGap }
   }, [images, gridGap])
+
+  // Clamp images that extend below maxRows (on mount, window resize, gap change)
+  useEffect(() => {
+    setImages(prev => {
+      const clamped = prev.map(img => {
+        if (img.y + img.h > maxRows) {
+          const y = Math.min(img.y, maxRows - 1)
+          const h = Math.max(1, maxRows - y)
+          return { ...img, y, h, ...(h !== img.h ? { offset: undefined } : {}) }
+        }
+        return img
+      })
+      return clamped.some((img, i) => img !== prev[i]) ? clamped : prev
+    })
+  }, [maxRows])
 
   // Undo handler
   const handleUndo = useCallback(() => {
