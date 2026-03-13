@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(chmod:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(cd:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "chroma"
+  ],
+  "mcpServers": {
+    "chroma": {
+      "alwaysAllow": [
+        "chroma_list_collections",
+        "chroma_create_collection",
+        "chroma_add_documents",
+        "chroma_query_documents",
+        "chroma_get_documents"
+      ]
+    }
+  },
+  "instructions": [
+    "IMPORTANT: This project uses ChromaDB for persistent memory",
+    "Every 5 interactions, check if you have logged recent learnings",
+    "After solving problems or making decisions, immediately log to ChromaDB",
+    "Use mcp__chroma__chroma_add_documents to preserve discoveries",
+    "Query existing memories at session start with mcp__chroma__chroma_query_documents",
+    "Each memory should be under 300 chars with appropriate metadata",
+    "Log architecture decisions, user preferences, fixes, and patterns"
+  ]
+}
