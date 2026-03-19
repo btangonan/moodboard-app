@@ -127,7 +127,8 @@ h1 {
   text-align: center;
   background: var(--bg-secondary);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  clip-path: inset(0 round var(--radius));
   min-height: 200px;
   box-sizing: border-box;
   transition: border-color var(--transition), background var(--transition);

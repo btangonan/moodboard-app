@@ -12,12 +12,20 @@ type UndoSnapshot = { images: MoodboardImage[], gridGap: number }
 
 const COLUMN_NUMBER = 10
 const BASE_ROW_HEIGHT = 50
+// .drop-zone has 2px border + 4px padding on each vertical side = 12px total chrome
+const DROP_ZONE_CHROME_PX = (2 + 4) * 2 // 12px
 
 const GridLayoutComponent = () => {
   const [containerWidthPx, setContainerWidthPx] = useState(960)
   const [containerHeightPx, setContainerHeightPx] = useState(540)
   const [gridGap, setGridGap] = useState(4)
-  const maxRows = Math.floor((containerHeightPx - gridGap - 20) / (BASE_ROW_HEIGHT + gridGap))
+  // contentHeight is the actual renderable area inside .drop-zone (border+padding excluded)
+  const contentHeight = containerHeightPx - DROP_ZONE_CHROME_PX
+  // With containerPadding={[0,0]}, RGL's container height = ceil(maxRows*(rowHeight+gap))
+  // and item height (h=maxRows) = round(rowHeight*maxRows + (maxRows-1)*gap)
+  // For item to fill contentHeight exactly: rowHeight = (contentHeight - (maxRows-1)*gap) / maxRows
+  const maxRows = Math.max(1, Math.floor(contentHeight / (BASE_ROW_HEIGHT + gridGap)))
+  const rowHeight = (contentHeight - (maxRows - 1) * gridGap) / maxRows
   const gridRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const gapSnapshotTakenRef = useRef(false)
@@ -231,7 +239,8 @@ const GridLayoutComponent = () => {
             className="layout"
             layout={images}
             cols={COLUMN_NUMBER}
-            rowHeight={BASE_ROW_HEIGHT}
+            rowHeight={rowHeight}
+            containerPadding={[0, 0]}
             width={containerWidthPx}
             margin={[gridGap, gridGap]}
             maxRows={maxRows}
