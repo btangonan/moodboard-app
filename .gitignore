@@ -39,3 +39,19 @@ Thumbs.db
 .vercel
 .chroma/
 *.chroma
+
+# Claude operational files
+CLAUDE.md*
+.claude/
+.mcp.json*
+STATE.md
+MEMORY_CHECKPOINT_REMINDER.md
+backups/
+templates/
+claudedocs/
+*.command
+setup-claude-chroma.sh
+GEMINI_CANVAS_MIGRATION_PROMPT.md
+MOODBOARD_CANVAS_PROMPT.md
+MOODBOARD_CANVAS_SPEC.md
+.coverage
